@@ -482,6 +482,10 @@ EPILOGUE  /  ここで途絶えた旅|EPILOGUE / A Journey Cut Short
 ひとつ前の旅の記憶を読み出しました。|Loaded the previous chronicle.
 旅の記憶を保存できませんでした。|Could not save the chronicle.
 言語設定を保存できませんでした。|Could not save the language preference.
+BGM音量・ミュート|BGM volume / mute
+BGM音量|BGM volume
+ミュート|Mute
+BGMを再生できませんでした。|Could not play the background music.
 """;
 
     private const string Templates = """

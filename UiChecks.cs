@@ -10,6 +10,30 @@ namespace DotARPG;
 
 internal static class UiChecks
 {
+    internal static async Task<string> RunAudio()
+    {
+        using var music = new BgmPlayer(persistSettings: false);
+        music.SetMuted(true);
+        music.Update(WorldStyle.Japanese, false, true);
+        for (int i = 0; i < 150 && !music.Ready && music.LastError == null; i++) await Task.Delay(50);
+        if (!music.Ready) throw new InvalidOperationException("MP3を開けませんでした: " + music.LastError);
+        double duration = music.Duration.TotalSeconds;
+        if (duration < 30) throw new InvalidOperationException("BGMの長さを取得できませんでした。");
+        music.SeekNearEndForVerification();
+        for (int i = 0; i < 100 && music.LoopCount == 0; i++) await Task.Delay(50);
+        if (music.LoopCount != 1 || music.Position.TotalSeconds >= 5)
+            throw new InvalidOperationException("曲末から先頭へループしませんでした。");
+        music.Update(WorldStyle.Japanese, false, false);
+        await Task.Delay(150);
+        TimeSpan pausedAt = music.Position;
+        await Task.Delay(200);
+        if (Math.Abs((music.Position - pausedAt).TotalSeconds) > .1)
+            throw new InvalidOperationException("一時停止中も曲が進んでいます。");
+        music.Update(WorldStyle.Western, false, true);
+        if (music.Ready) throw new InvalidOperationException("未収録の世界観に切り替えても曲が止まりませんでした。");
+        return $"PASS: embedded MP3 decoded ({duration:0.0}s), looped at the actual end, paused, and stopped for an unscored theme; verification was muted.";
+    }
+
     internal static string RunResize()
     {
         var window = new MainWindow(WorldStyle.Japanese, 31, false)

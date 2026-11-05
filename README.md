@@ -18,6 +18,7 @@ Download `DotARPG.exe` from Releases and run it on Windows x64. The .NET runtime
 - 途中保存、プレイデータ、同じ作品への別プレイヤーの挑戦、時々現れる続編。
 - 右上のボタンで日本語／Englishを切り替え。
 - プレイデータ画面で、4人のプレイヤーの肖像と冒険の記録を確認。
+- 和風マップのBGM「Stillness at the Mountain Gate」を収録。右上の♫で音量・ミュートを変更。曲末のフェードを含めてループします。
 
 | 操作 / Key | 動作 / Action |
 |---|---|

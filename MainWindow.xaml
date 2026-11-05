@@ -113,6 +113,8 @@
     </Border>
     <Button x:Name="LanguageButton" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top"
             Content="English" Click="ChangeLanguage" Margin="0,12,14,0" Padding="7,3" FontSize="10" />
+    <Button x:Name="MusicButton" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top"
+            Content="♫" Click="ChooseAudio" ToolTip="BGM音量・ミュート" Margin="0,12,68,0" Padding="6,3" FontSize="10" />
   </Grid>
   </Viewbox>
 </Window>

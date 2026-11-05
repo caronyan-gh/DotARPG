@@ -29,7 +29,8 @@ public partial class App : Application
         }
         string? languageVerification = Argument("--verify-language");
         string? resizeVerification = Argument("--verify-resize");
-        string? verification = resizeVerification ?? languageVerification ?? Argument("--verify-ui");
+        string? audioVerification = Argument("--verify-audio");
+        string? verification = audioVerification ?? resizeVerification ?? languageVerification ?? Argument("--verify-ui");
         if (verification != null)
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -37,7 +38,8 @@ public partial class App : Application
             {
                 try
                 {
-                    string result = resizeVerification != null ? UiChecks.RunResize()
+                    string result = audioVerification != null ? await UiChecks.RunAudio()
+                        : resizeVerification != null ? UiChecks.RunResize()
                         : languageVerification != null ? UiChecks.RunLanguage() : await UiChecks.Run(verification);
                     File.WriteAllText(verification, result);
                     Shutdown(0);

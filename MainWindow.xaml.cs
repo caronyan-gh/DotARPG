@@ -33,6 +33,7 @@ public partial class MainWindow : Window
     private string inventorySignature = "";
     private readonly TaskCompletionSource<bool> resumed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly UiText uiText;
+    private readonly BgmPlayer? music;
     private static string T(string text) => GameText.Text(text);
     internal Adventure CurrentAdventure => adventure;
     internal EpisodePhase CurrentPhase => flow.Phase;
@@ -43,6 +44,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         WindowAspect.Attach(this);
         persistent = startTimer;
+        music = persistent ? new BgmPlayer() : null;
+        if (music != null) music.PlaybackFailed += () => adventure?.Notify("BGMを再生できませんでした。");
         this.previewTemperament = previewTemperament;
         Width = Math.Max(MinWidth, Math.Min(1500, SystemParameters.WorkArea.Width * .94));
         Height = Math.Max(MinHeight, Math.Min(960, SystemParameters.WorkArea.Height * .94));
@@ -65,6 +68,7 @@ public partial class MainWindow : Window
         uiText = new UiText(this);
         uiText.Apply();
         LanguageButton.Content = GameText.English ? "日本語" : "English";
+        UpdateAudioButton();
         preferredStyle = style;
         chronicle = persistent ? new Chronicle(stateDirectory == null ? null : System.IO.Path.Combine(stateDirectory, "chronicle.json")) : null;
         checkpoints = persistent ? new JourneyCheckpointStore(stateDirectory == null ? null : System.IO.Path.Combine(stateDirectory, "current-journey.json")) : null;
@@ -72,7 +76,7 @@ public partial class MainWindow : Window
             : System.IO.Path.Combine(System.IO.Path.GetTempPath(), "DotARPG-preview-" + Guid.NewGuid().ToString("N") + ".json"));
         UpdateThemeButton();
         timer.Tick += Update;
-        Closed += (_, _) => { closed = true; timer.Stop(); };
+        Closed += (_, _) => { closed = true; timer.Stop(); music?.Dispose(); };
         Closing += SaveOnClosing;
         JourneyCheckpoint? resume = seed == null && style == null ? checkpoints?.Load() : null;
         if (resume != null)
@@ -183,6 +187,7 @@ public partial class MainWindow : Window
         displayedPhase = null;
         library.Register(definition);
         RefreshLogs();
+        UpdateMusic();
     }
 
     private void RefreshNames()
@@ -200,6 +205,7 @@ public partial class MainWindow : Window
         uiText.Apply();
         LanguageButton.Content = GameText.English ? "日本語" : "English";
         UpdateThemeButton();
+        UpdateAudioButton();
         if (restoring) ShowLoading();
         else if (adventure != null)
         {
@@ -249,6 +255,7 @@ public partial class MainWindow : Window
                 }
             }
         }
+        UpdateMusic();
         Map.Refresh(now, freeze: paused || flow.Phase != EpisodePhase.Playing);
         RefreshLogs();
         sinceSave += elapsed;
@@ -424,6 +431,35 @@ public partial class MainWindow : Window
     {
         paused = value; PauseButton.Content = paused ? "▷" : "Ⅱ";
         PauseOverlay.Visibility = paused ? Visibility.Visible : Visibility.Collapsed;
+        UpdateMusic();
+    }
+
+    private void UpdateMusic()
+    {
+        if (adventure == null) return;
+        music?.Update(adventure.World.Theme.Style, adventure.Combat is { Major: true },
+            flow.Phase == EpisodePhase.Playing && !paused && !restoring && !generationPending);
+    }
+    private void UpdateAudioButton()
+    {
+        MusicButton.IsEnabled = music != null;
+        MusicButton.Content = music is { Muted: true } or { Volume: <= 0 } ? "♫×" : "♫";
+        MusicButton.ToolTip = T("BGM音量・ミュート");
+    }
+    private void ChooseAudio(object sender, RoutedEventArgs e)
+    {
+        if (music == null) return;
+        var menu = new ContextMenu();
+        var mute = new MenuItem { Header = T("ミュート"), IsCheckable = true, IsChecked = music.Muted, StaysOpenOnClick = true };
+        mute.Click += (_, _) => { music.SetMuted(mute.IsChecked); UpdateAudioButton(); };
+        menu.Items.Add(mute);
+        var panel = new StackPanel { Margin = new Thickness(4), Width = 160 };
+        var label = new TextBlock { Text = T("BGM音量") + $" {music.Volume:P0}" };
+        var slider = new Slider { Minimum = 0, Maximum = 100, Value = music.Volume * 100, TickFrequency = 5, Margin = new Thickness(0, 7, 0, 3) };
+        slider.ValueChanged += (_, _) => { music.SetVolume(slider.Value / 100); label.Text = T("BGM音量") + $" {music.Volume:P0}"; UpdateAudioButton(); };
+        panel.Children.Add(label); panel.Children.Add(slider);
+        menu.Items.Add(new MenuItem { Header = panel, StaysOpenOnClick = true });
+        MusicButton.ContextMenu = menu; menu.PlacementTarget = MusicButton; menu.IsOpen = true;
     }
     private void ChangeSpeed(object sender, RoutedEventArgs e)
     {

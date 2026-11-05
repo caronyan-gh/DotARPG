@@ -16,5 +16,6 @@
     <None Remove="Tests/**" />
     <Resource Include="Assets\DotARPG.ico" />
     <Resource Include="Assets\Portraits\*.png" />
+    <EmbeddedResource Include="Assets\Music\*.mp3" />
   </ItemGroup>
 </Project>
