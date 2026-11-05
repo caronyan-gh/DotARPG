@@ -41,6 +41,24 @@ internal static class UiChecks
                 throw new InvalidOperationException("一時停止中も曲が進んでいます。");
             results.Add($"{style} {duration:0.0}s");
         }
+        if (resources.Contains("DotARPG.Assets.Music.boss.mp3"))
+        {
+            music.Update(WorldStyle.Japanese, true, true);
+            for (int i = 0; i < 150 && !music.Ready && music.LastError == null; i++) await Task.Delay(50);
+            if (!music.Ready || music.CurrentTrack != "boss") throw new InvalidOperationException("ボス曲へ切り替わりませんでした。");
+            double duration = music.Duration.TotalSeconds;
+            int previousLoops = music.LoopCount;
+            music.SeekNearEndForVerification();
+            for (int i = 0; i < 100 && music.LoopCount == previousLoops; i++) await Task.Delay(50);
+            if (music.LoopCount != previousLoops + 1 || music.Position.TotalSeconds >= 5)
+                throw new InvalidOperationException("ボス曲がループしませんでした。");
+            music.Update(WorldStyle.Western, true, true);
+            if (!music.Ready || music.CurrentTrack != "boss") throw new InvalidOperationException("世界観に共通するボス曲になっていません。");
+            music.Update(WorldStyle.Japanese, false, true);
+            for (int i = 0; i < 150 && !music.Ready && music.LastError == null; i++) await Task.Delay(50);
+            if (!music.Ready || music.CurrentTrack != "japanese") throw new InvalidOperationException("戦闘後にマップ曲へ戻りませんでした。");
+            results.Add($"Boss {duration:0.0}s (battle entry, loop, map return)");
+        }
         return "PASS: track switching, decoding, actual end looping and pause: " + string.Join(", ", results) + "; verification was muted.";
     }
 

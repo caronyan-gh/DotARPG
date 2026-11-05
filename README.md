@@ -19,13 +19,15 @@ Download `DotARPG.exe` from Releases and run it on Windows x64. The .NET runtime
 - 右上のボタンで日本語／Englishを切り替え。
 - プレイデータ画面で、4人のプレイヤーの肖像と冒険の記録を確認。
 - 和風・洋風・中華風・オリエンタルのマップBGMを収録。右上の♫で音量・ミュートを変更。曲末のフェードを含めてループします。
+- 中ボス・ラスボス戦では共通のボスBGMへ切り替わり、探索に戻るとマップBGMへ戻ります。
 
-| 世界観 / Setting | BGM |
+| 場面 / Scene | BGM |
 |---|---|
 | 和風 / Japanese | Stillness at the Mountain Gate |
 | 洋風 / Western | Sunlight on Worn Stone |
 | 中華風 / Chinese | 远山凝露 |
 | オリエンタル / Oriental | Silver Sands Passage |
+| 中ボス・ラスボス / Boss battles | Waiting for the Opening |
 
 | 操作 / Key | 動作 / Action |
 |---|---|

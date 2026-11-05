@@ -19,6 +19,7 @@ internal sealed class BgmPlayer : IDisposable
     internal double Volume { get; private set; } = .18;
     internal bool Muted { get; private set; }
     internal bool Ready => ready;
+    internal string? CurrentTrack => track;
     internal TimeSpan Position => player.Position;
     internal TimeSpan Duration => player.NaturalDuration.HasTimeSpan ? player.NaturalDuration.TimeSpan : TimeSpan.Zero;
     internal int LoopCount { get; private set; }
