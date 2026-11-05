@@ -74,6 +74,7 @@ public partial class App : Application
                 try
                 {
                     string? scene = Argument("--scene");
+                    using var previewAudio = scene == "audio" ? new BgmPlayer(persistSettings: false) : null;
                     window.AdvanceForSnapshot(int.TryParse(Argument("--ticks"), out int ticks) ? Math.Clamp(ticks, 0, 120000) : 170, Argument("--encounter"), scene);
                     window.UpdateLayout();
                     FrameworkElement surface = window.Root;
@@ -83,6 +84,12 @@ public partial class App : Application
                         data.WindowStartupLocation = WindowStartupLocation.Manual;
                         data.Left = data.Top = -10000; data.ShowInTaskbar = false;
                         data.Show(); data.UpdateLayout(); surface = data.CaptureSurface;
+                    }
+                    if (scene == "audio")
+                    {
+                        var menu = window.CreateAudioMenu(previewAudio!);
+                        menu.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                        menu.Arrange(new Rect(menu.DesiredSize)); menu.UpdateLayout(); surface = menu;
                     }
                     var bitmap = new RenderTargetBitmap((int)surface.ActualWidth, (int)surface.ActualHeight, 96, 96, PixelFormats.Pbgra32);
                     bitmap.Render(surface);

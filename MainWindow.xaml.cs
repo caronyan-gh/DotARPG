@@ -449,17 +449,23 @@ public partial class MainWindow : Window
     private void ChooseAudio(object sender, RoutedEventArgs e)
     {
         if (music == null) return;
-        var menu = new ContextMenu();
-        var mute = new MenuItem { Header = T("ミュート"), IsCheckable = true, IsChecked = music.Muted, StaysOpenOnClick = true };
-        mute.Click += (_, _) => { music.SetMuted(mute.IsChecked); UpdateAudioButton(); };
+        var menu = CreateAudioMenu(music);
+        MusicButton.ContextMenu = menu; menu.PlacementTarget = MusicButton; menu.IsOpen = true;
+    }
+    internal ContextMenu CreateAudioMenu(BgmPlayer audio)
+    {
+        var menu = new ContextMenu { Style = (Style)FindResource("AudioMenuStyle") };
+        var itemStyle = (Style)FindResource("AudioMenuItemStyle");
+        var mute = new MenuItem { Style = itemStyle, Header = T("ミュート"), IsCheckable = true, IsChecked = audio.Muted, StaysOpenOnClick = true };
+        mute.Click += (_, _) => { audio.SetMuted(mute.IsChecked); UpdateAudioButton(); };
         menu.Items.Add(mute);
         var panel = new StackPanel { Margin = new Thickness(4), Width = 160 };
-        var label = new TextBlock { Text = T("BGM音量") + $" {music.Volume:P0}" };
-        var slider = new Slider { Minimum = 0, Maximum = 100, Value = music.Volume * 100, TickFrequency = 5, Margin = new Thickness(0, 7, 0, 3) };
-        slider.ValueChanged += (_, _) => { music.SetVolume(slider.Value / 100); label.Text = T("BGM音量") + $" {music.Volume:P0}"; UpdateAudioButton(); };
+        var label = new TextBlock { Text = T("BGM音量") + $" {audio.Volume:P0}", Foreground = new SolidColorBrush(Color.FromRgb(201, 185, 140)) };
+        var slider = new Slider { Style = (Style)FindResource("AudioVolumeSliderStyle"), Minimum = 0, Maximum = 100, Value = audio.Volume * 100, TickFrequency = 5, Margin = new Thickness(0, 7, 0, 3) };
+        slider.ValueChanged += (_, _) => { audio.SetVolume(slider.Value / 100); label.Text = T("BGM音量") + $" {audio.Volume:P0}"; UpdateAudioButton(); };
         panel.Children.Add(label); panel.Children.Add(slider);
-        menu.Items.Add(new MenuItem { Header = panel, StaysOpenOnClick = true });
-        MusicButton.ContextMenu = menu; menu.PlacementTarget = MusicButton; menu.IsOpen = true;
+        menu.Items.Add(new MenuItem { Style = itemStyle, Header = panel, StaysOpenOnClick = true });
+        return menu;
     }
     private void ChangeSpeed(object sender, RoutedEventArgs e)
     {
