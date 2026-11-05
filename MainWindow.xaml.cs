@@ -44,6 +44,7 @@ public partial class MainWindow : Window
     public MainWindow(WorldStyle? style = null, int? seed = null, bool startTimer = true, PlayerTemperament? previewTemperament = null, string? stateDirectory = null)
     {
         InitializeComponent();
+        Title += $"  [v{App.DisplayVersion}]";
         WindowAspect.Attach(this);
         persistent = startTimer;
         music = persistent ? new BgmPlayer() : null;
@@ -194,7 +195,7 @@ public partial class MainWindow : Window
     private void RefreshNames()
     {
         RealmTitle.Text = T(adventure.Title);
-        Title = T($"DotARPG — {adventure.Title} · {player.Name}");
+        Title = T($"DotARPG — {adventure.Title} · {player.Name}") + $"  [v{App.DisplayVersion}]";
         WorldInfo.Text = T($"{adventure.World.Theme.Label}  /  {adventure.World.Name}");
         HeroNameText.Text = T(adventure.HeroName);
         PlayerNameText.Text = T($"PLAYER  {player.Name}");

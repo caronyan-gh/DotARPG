@@ -19,7 +19,7 @@ public sealed class PlayerDataWindow : Window
     public PlayerDataWindow(PlayerLibrary library, string selectedPlayer)
     {
         this.library = library;
-        Title = GameText.Text("DotARPG — プレイデータ"); Width = 1040; Height = 720; MinWidth = 900; MinHeight = 600;
+        Title = GameText.Text("DotARPG — プレイデータ") + $"  [v{App.DisplayVersion}]"; Width = 1040; Height = 720; MinWidth = 900; MinHeight = 600;
         Icon = BitmapFrame.Create(new Uri("pack://application:,,,/Assets/DotARPG.ico"));
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = new SolidColorBrush(Color.FromRgb(17, 30, 34)); Foreground = Brushes.Beige;

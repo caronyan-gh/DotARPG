@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -9,6 +10,9 @@ namespace DotARPG;
 
 public partial class App : Application
 {
+    internal static string DisplayVersion { get; } = typeof(App).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
