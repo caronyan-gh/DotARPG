@@ -381,6 +381,8 @@ PROLOGUE  /  ふたたびの旅|PROLOGUE / A Journey Renewed
 PROLOGUE  /  小さな旅のはじまり|PROLOGUE / A Small Beginning
 EPILOGUE  /  旅の完結|EPILOGUE / Journey's End
 EPILOGUE  /  ここで途絶えた旅|EPILOGUE / A Journey Cut Short
+力尽きた|YOU DIED
+育成・装備・踏破はそのまま、同じ世界で再挑戦。|Keep your progress, equipment and explored map. Try again in the same world.
 失われた宝を求めて。|In search of a lost treasure.
 捕らわれた人々を救うために。|To rescue those held captive.
 目覚めた災いを、もう一度封じるために。|To seal an awakened evil once more.
@@ -539,6 +541,7 @@ Lv.{0}に上がった。少しずつ、力がついてきた。|Reached Lv.{0}. 
 {0}に捕らわれた人々を救った。|Rescued those held captive by {0}.
 {0}を封じ、災いを鎮めた。|Sealed {0} and ended the calamity.
 まもなく冒険が始まります（{0}秒） · Enterで観戦へ|Adventure starts in {0}s · Press Enter to watch
+{0}秒後、拠点で復活します。|Reviving at base in {0}s.
 {0}との戦いで、力尽きた。|Fell in battle against {0}.
 {0}日間の旅 · 討伐 {1} · 死亡 {2}回 · 踏破 {3}|{0} days · {1} defeated · {2} deaths · {3} explored
 死亡 {0} 回|Deaths: {0}

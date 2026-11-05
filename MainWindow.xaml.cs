@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using DotARPG.Core;
 
@@ -28,7 +29,8 @@ public partial class MainWindow : Window
     private WorldStyle? preferredStyle;
     private int speedIndex, lastLogTick = -1, lastLogCount = -1;
     private bool paused, fullscreen, generationPending, remembered, restoring, closed;
-    private double previous, accumulator, sinceSave;
+    internal const double DeathPresentationDuration = 4;
+    private double previous, accumulator, sinceSave, deathElapsed;
     private WindowState previousState;
     private string inventorySignature = "";
     private readonly TaskCompletionSource<bool> resumed = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -180,7 +182,7 @@ public partial class MainWindow : Window
         Map.SetAdventure(adventure);
         RefreshNames();
         inventorySignature = "";
-        accumulator = sinceSave = 0;
+        accumulator = sinceSave = deathElapsed = 0;
         previous = clock.Elapsed.TotalSeconds;
         lastLogTick = lastLogCount = -1;
         displayedPhase = null;
@@ -246,6 +248,7 @@ public partial class MainWindow : Window
                 if (adventure.Finished)
                 {
                     flow.Finish();
+                    deathElapsed = 0;
                     accumulator = 0;
                     RememberEnding();
                     ShowPresentation();
@@ -253,6 +256,12 @@ public partial class MainWindow : Window
                     break;
                 }
             }
+        }
+        else if (flow.Phase == EpisodePhase.Ending && !adventure.Won && !paused && !generationPending)
+        {
+            deathElapsed += Math.Max(0, elapsed);
+            if (deathElapsed >= DeathPresentationDuration) RetryAdventure(this, new RoutedEventArgs());
+            else ShowPresentation();
         }
         UpdateMusic();
         Map.Refresh(now, freeze: paused || flow.Phase != EpisodePhase.Playing);
@@ -279,8 +288,21 @@ public partial class MainWindow : Window
         StoryOverlay.Visibility = Visibility.Visible;
         if (flow.Phase == EpisodePhase.Opening)
             StoryHint.Text = T($"まもなく冒険が始まります（{Math.Ceiling(EpisodeFlow.OpeningDuration - flow.OpeningElapsed):0}秒） · Enterで観戦へ");
+        else if (!adventure.Won)
+            StoryHint.Text = T($"{Math.Ceiling(Math.Max(0, DeathPresentationDuration - deathElapsed)):0}秒後、拠点で復活します。\n育成・装備・踏破はそのまま、同じ世界で再挑戦。");
         if (displayedPhase == flow.Phase) return;
         displayedPhase = flow.Phase;
+        bool died = flow.Phase == EpisodePhase.Ending && !adventure.Won;
+        DeathBanner.Visibility = died ? Visibility.Visible : Visibility.Collapsed;
+        if (died)
+        {
+            DeathBanner.Text = T("力尽きた");
+            var impact = new DoubleAnimation(1.28, 1, TimeSpan.FromSeconds(.55))
+                { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+            var scale = (ScaleTransform)DeathBanner.RenderTransform;
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, impact);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, impact);
+        }
         StoryTitle.Text = T(adventure.Title);
         StorySubtitle.Text = T($"{adventure.World.Theme.Label} · {adventure.World.Name}　／　PLAYER {player.Name}");
         PrimaryStoryButton.Visibility = Visibility.Visible;
@@ -301,13 +323,14 @@ public partial class MainWindow : Window
         }
         else
         {
-            StoryEyebrow.Text = T(adventure.Won ? "EPILOGUE  /  旅の完結" : "EPILOGUE  /  ここで途絶えた旅");
-            StoryNarrative.Text = T(adventure.Epilogue + (adventure.Won ? "" : $"\n{adventure.DeathCause}との戦いで、力尽きた。"));
+            StoryEyebrow.Text = adventure.Won ? T("EPILOGUE  /  旅の完結") : "DEFEATED";
+            StoryNarrative.Text = T(adventure.Won ? adventure.Epilogue : $"{adventure.DeathCause}との戦いで、力尽きた。");
             StorySummary.Text = T($"{adventure.HeroName}　Lv.{adventure.Level}\n{adventure.Day}日間の旅 · 討伐 {adventure.Victories} · 死亡 {adventure.DeathCount}回 · 踏破 {adventure.Exploration.Fraction:P1}");
             PrimaryStoryButton.Content = T("次の冒険を開始");
             RetryStoryButton.Visibility = adventure.Won ? Visibility.Collapsed : Visibility.Visible;
-            OtherPlayerButton.Visibility = Visibility.Visible;
-            StoryHint.Text = T("次の冒険を選ぶまで、この旅の終わりに留まります。\n×や「終了」で閉じても、この画面から再開できます。");
+            PrimaryStoryButton.Visibility = OtherPlayerButton.Visibility = adventure.Won ? Visibility.Visible : Visibility.Collapsed;
+            if (adventure.Won)
+                StoryHint.Text = T("次の冒険を選ぶまで、この旅の終わりに留まります。\n×や「終了」で閉じても、この画面から再開できます。");
         }
         StoryOverlay.BeginAnimation(OpacityProperty, null);
         StoryOverlay.Opacity = 1;
@@ -325,6 +348,7 @@ public partial class MainWindow : Window
     private void RetryAdventure(object sender, RoutedEventArgs e)
     {
         if (restoring || !adventure.ReviveAtBase()) return;
+        deathElapsed = accumulator = 0;
         flow.Retry(); remembered = false; SetPaused(false); Map.SetAdventure(adventure);
         displayedPhase = null; ShowPresentation(); RefreshLogs(); SaveProgress();
     }
@@ -534,7 +558,7 @@ public partial class MainWindow : Window
                     && (encounter != "midboss" || battle.Opponent.Kind == EnemyKind.Midboss)
                     && (encounter == "dodge" ? battle.Dashing : battle.Phase == BattlePhase.Windup && battle.WindupProgress > .3f)) break;
             }
-        if (adventure.Finished) flow.Finish();
+        if (adventure.Finished) { flow.Finish(); deathElapsed = 0; }
         ShowPresentation();
         if (scene == "retry") RetryAdventure(this, new RoutedEventArgs());
         StoryOverlay.BeginAnimation(OpacityProperty, null); StoryOverlay.Opacity = 1;

@@ -93,6 +93,9 @@
       <Border Width="650" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="28" Margin="25" Background="#000000" BorderBrush="#4A6256" BorderThickness="1" CornerRadius="5">
         <ScrollViewer x:Name="StoryScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel>
+            <TextBlock x:Name="DeathBanner" Text="力尽きた" Visibility="Collapsed" FontFamily="Yu Mincho" FontSize="48" FontWeight="Bold" Foreground="#D75D61" TextAlignment="Center" Margin="0,0,0,22" RenderTransformOrigin="0.5,0.5">
+              <TextBlock.RenderTransform><ScaleTransform /></TextBlock.RenderTransform>
+            </TextBlock>
             <TextBlock x:Name="StoryEyebrow" Text="PROLOGUE" Foreground="#C4B385" FontFamily="Consolas" FontSize="12" TextAlignment="Center" />
             <TextBlock x:Name="StoryTitle" FontFamily="Yu Mincho" FontSize="36" Foreground="#F1E7CB" TextAlignment="Center" TextWrapping="Wrap" Margin="0,14,0,10" />
             <TextBlock x:Name="StorySubtitle" FontSize="12" Foreground="#9CB4A6" TextAlignment="Center" TextWrapping="Wrap" />

@@ -10,6 +10,43 @@ namespace DotARPG;
 
 internal static class UiChecks
 {
+    internal static string RunRevival()
+    {
+        var window = new MainWindow(WorldStyle.Japanese, 31, false, PlayerTemperament.Reckless)
+        { WindowStartupLocation = WindowStartupLocation.Manual, Left = -10000, Top = -10000, ShowInTaskbar = false };
+        bool originalLanguage = GameText.English;
+        try
+        {
+            window.Show();
+            window.AdvanceForSnapshot(0, scene: "ending");
+            var game = window.CurrentAdventure;
+            if (!game.Finished || game.Won || window.DeathBanner.Visibility != Visibility.Visible)
+                throw new InvalidOperationException("死亡演出が出ていません。");
+            int tick = game.Tick, deaths = game.DeathCount, level = game.Level, xp = game.Experience;
+            int explored = game.Exploration.ExploredTiles;
+            var gear = Enum.GetValues<GearSlot>().Select(slot => game.Equipment[slot]).ToArray();
+            var inventory = game.Inventory.ToArray();
+            window.SpeedButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.SpeedButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            for (int i = 0; i < 15; i++) window.AdvanceFrame(.25, i * .25);
+            if (window.CurrentPhase != EpisodePhase.Ending || game.Tick != tick)
+                throw new InvalidOperationException("16倍速で死亡演出が短縮されました。");
+            GameText.English = false;
+            window.LanguageButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            if (window.DeathBanner.Text != "YOU DIED" || !window.StoryHint.Text.StartsWith("Reviving at base in 1s."))
+                throw new InvalidOperationException("死亡表示の英訳またはカウントダウンが正しくありません。");
+            window.AdvanceFrame(.25, 4);
+            if (!ReferenceEquals(window.CurrentAdventure, game) || window.CurrentPhase != EpisodePhase.Playing || game.Finished
+                || game.Tick != tick || game.Hero != game.RespawnSite.Position || game.Health != game.MaxHealth || game.Mana != game.MaxMana
+                || game.DeathCount != deaths || game.Level != level || game.Experience != xp || game.Exploration.ExploredTiles != explored
+                || !gear.SequenceEqual(Enum.GetValues<GearSlot>().Select(slot => game.Equipment[slot])) || !inventory.SequenceEqual(game.Inventory)
+                || game.RevivalTicks.Last() != tick || window.StoryOverlay.Visibility != Visibility.Collapsed)
+                throw new InvalidOperationException("自動復活で育成・持ち物・踏破・死亡数または拠点位置が変わりました。");
+            return "PASS: death banner and countdown; 4 real seconds even at 16x; localized; automatic full recovery at base in the same adventure, preserving progress and replay revival tick.";
+        }
+        finally { window.Close(); GameText.English = originalLanguage; }
+    }
+
     internal static async Task<string> RunAudio()
     {
         using var music = new BgmPlayer(persistSettings: false);
@@ -177,8 +214,8 @@ internal static class UiChecks
         first.AdvanceForSnapshot(0, scene: "ending");
         Check(first.CurrentAdventure.Finished && !first.CurrentAdventure.Won, "死亡時にエンディングが出る");
         int finalTick = first.CurrentAdventure.Tick;
-        for (int i = 0; i < 200; i++) first.AdvanceFrame(.25, 4 + i * .25);
-        Check(first.CurrentPhase == EpisodePhase.Ending && first.CurrentAdventure.Tick == finalTick, "エンディング後は自動で次の世界へ進まない");
+        for (int i = 0; i < 12; i++) first.AdvanceFrame(.25, 4 + i * .25);
+        Check(first.CurrentPhase == EpisodePhase.Ending && first.CurrentAdventure.Tick == finalTick, "死亡演出中は冒険が止まる");
         first.Close();
         var ended = Open(); await WaitResume(ended);
         Check(ended.CurrentPhase == EpisodePhase.Ending && ended.CurrentAdventure.Tick == finalTick, "×で終了したエンディングを次回そのまま再開する");
