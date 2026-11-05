@@ -7,8 +7,8 @@
         Background="#102C35" Foreground="#E9E3CE" FontFamily="Yu Gothic UI" FontSize="12"
         KeyDown="OnKeyDown">
   <Viewbox Stretch="Uniform">
-  <Grid x:Name="Root" Width="1328" Height="768" ClipToBounds="True">
-    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="304" /></Grid.ColumnDefinitions>
+  <Grid x:Name="Root" Width="1640" Height="960" ClipToBounds="True">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="360" /></Grid.ColumnDefinitions>
     <Grid ClipToBounds="True">
       <local:WorldView x:Name="Map" />
       <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="16" Padding="10,6" Background="#A014292B" CornerRadius="3" IsHitTestVisible="False">
@@ -30,8 +30,8 @@
     </Grid>
     <Border Grid.Column="1" Background="#111E22" BorderBrush="#34453E" BorderThickness="1,0,0,0">
       <Grid>
-        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" MinHeight="120" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-        <ScrollViewer x:Name="StatusScroll" MaxHeight="528" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="19,14,18,0">
+        <Grid.RowDefinitions><RowDefinition Height="2*" /><RowDefinition Height="*" MinHeight="280" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <ScrollViewer x:Name="StatusScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="19,14,18,0">
           <StackPanel>
             <TextBlock Text="D O T  /  A R P G" FontFamily="Consolas" FontSize="14" Foreground="#C4B78F" />
             <TextBlock x:Name="RealmTitle" FontFamily="Yu Mincho" FontSize="21" Margin="0,6,0,3" TextWrapping="Wrap" />

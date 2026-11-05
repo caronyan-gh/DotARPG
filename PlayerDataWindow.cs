@@ -88,11 +88,7 @@ public sealed class PlayerDataWindow : Window
     private static BitmapImage Portrait(PlayerProfile profile)
     {
         if (portraits.TryGetValue(profile.Temperament, out var cached)) return cached;
-        string name = profile.Temperament switch
-        {
-            PlayerTemperament.Careful => "sui", PlayerTemperament.Balanced => "yuzu",
-            PlayerTemperament.Reckless => "rei", _ => "haru"
-        };
+        string name = PlayerProfile.Create(profile.Temperament).Id;
         var image = new BitmapImage();
         image.BeginInit(); image.UriSource = new Uri($"pack://application:,,,/Assets/Portraits/{name}.png");
         image.DecodePixelWidth = 512; image.CacheOption = BitmapCacheOption.OnLoad; image.EndInit(); image.Freeze();

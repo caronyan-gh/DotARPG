@@ -4,7 +4,17 @@ using System.Text.Json.Serialization;
 
 namespace DotARPG.Core;
 
-public sealed record PlayerProfile(string Id, string Name, PlayerTemperament Temperament);
+public sealed record PlayerProfile(string Id, string Name, PlayerTemperament Temperament)
+{
+    public static PlayerProfile Create(PlayerTemperament temperament) => temperament switch
+    {
+        PlayerTemperament.Careful => new("sui", "すい", temperament),
+        PlayerTemperament.Balanced => new("yuzu", "ゆず", temperament),
+        PlayerTemperament.Reckless => new("rei", "レイ", temperament),
+        PlayerTemperament.Meticulous => new("haru", "ハル", temperament),
+        _ => throw new ArgumentOutOfRangeException(nameof(temperament))
+    };
+}
 public sealed record GameDefinition(string Id, int Seed, WorldStyle Style, SagaMemory? PreviousStory, string Title, bool ExpandedProgression = false);
 public sealed record PlayerRun(string Id, string GameId, string PlayerId, string Status, int Deaths,
     int Level, int Day, int Victories, double Explored, int Ticks, DateTimeOffset UpdatedAt);
@@ -45,14 +55,11 @@ public sealed class PlayerLibrary
         if (result.Players == null || result.Games == null || result.Runs == null
             || result.Players.Any(p => string.IsNullOrWhiteSpace(p.Id) || string.IsNullOrWhiteSpace(p.Name) || !Enum.IsDefined(p.Temperament)))
             throw new JsonException("プレイデータの形式が違います。");
-        return result;
+        // Preserve record IDs and play history, but never retain the old random-name assignments.
+        return result with { Players = result.Players.Select(p => p with { Name = PlayerProfile.Create(p.Temperament).Name }).ToList() };
     }
     private static LibraryData Empty() => new([], [], []);
-    private static IEnumerable<PlayerProfile> CreatePlayers()
-    {
-        string[] names = ["すい", "ゆず", "レイ", "ハル"];
-        return Enum.GetValues<PlayerTemperament>().Select((t, i) => new PlayerProfile(Guid.NewGuid().ToString("N"), names[i], t));
-    }
+    private static IEnumerable<PlayerProfile> CreatePlayers() => Enum.GetValues<PlayerTemperament>().Select(PlayerProfile.Create);
 
     public void Register(GameDefinition game)
     {
@@ -61,7 +68,8 @@ public sealed class PlayerLibrary
     public void Record(string runId, GameDefinition game, PlayerProfile player, Adventure adventure, bool interrupted = false)
     {
         Register(game);
-        if (data.Players.All(p => p.Id != player.Id)) data.Players.Add(player);
+        if (data.Players.All(p => p.Id != player.Id))
+            data.Players.Add(player with { Name = PlayerProfile.Create(player.Temperament).Name });
         string status = adventure.Finished ? adventure.Won ? "クリア" : "死亡" : interrupted ? "中断" : "冒険中";
         var run = new PlayerRun(runId, game.Id, player.Id, status, adventure.DeathCount, adventure.Level,
             adventure.Day, adventure.Victories, adventure.Exploration.Fraction, adventure.Tick, DateTimeOffset.UtcNow);

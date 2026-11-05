@@ -51,7 +51,6 @@ public partial class MainWindow : Window
         Height = Math.Max(MinHeight, Math.Min(960, SystemParameters.WorkArea.Height * .94));
         SizeChanged += (_, _) =>
         {
-            StatusScroll.MaxHeight = Math.Max(200, Root.ActualHeight - 240);
             StoryScroll.MaxHeight = Math.Max(260, Root.ActualHeight - 100);
         };
         foreach (var entry in EnemyColors.Legend)
@@ -117,7 +116,7 @@ public partial class MainWindow : Window
             definition = library.Games.FirstOrDefault(g => g.Id == save.GameId)
                 ?? new(save.GameId ?? GameId(restored), save.Seed, save.Style, save.PreviousStory, restored.Title, restored.World.ExpandedProgression);
             player = library.Players.FirstOrDefault(p => p.Id == save.PlayerId)
-                ?? new(save.PlayerId ?? Guid.NewGuid().ToString("N"), save.PlayerName ?? "ななし", save.Temperament);
+                ?? PlayerProfile.Create(save.Temperament) with { Id = save.PlayerId ?? PlayerProfile.Create(save.Temperament).Id };
             runId = save.RunId ?? Guid.NewGuid().ToString("N");
             speedIndex = save.SpeedIndex;
             SpeedButton.Content = $"{speeds[speedIndex]}×";

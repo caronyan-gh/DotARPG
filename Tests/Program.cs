@@ -3,6 +3,49 @@ using System.Numerics;
 
 if (args.Contains("--sessions")) { SessionChecks.Run(); return; }
 
+if (args.Contains("--players-smoke"))
+{
+    string directory = Path.Combine(Path.GetTempPath(), "DotARPG-player-check-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(directory);
+    try
+    {
+        var expected = new[]
+        {
+            new PlayerProfile("sui", "すい", PlayerTemperament.Careful),
+            new PlayerProfile("yuzu", "ゆず", PlayerTemperament.Balanced),
+            new PlayerProfile("rei", "レイ", PlayerTemperament.Reckless),
+            new PlayerProfile("haru", "ハル", PlayerTemperament.Meticulous)
+        };
+        string file = Path.Combine(directory, "players.json");
+        var firstLibrary = new PlayerLibrary(file);
+        var secondLibrary = new PlayerLibrary(file);
+        Require(firstLibrary.Players.SequenceEqual(expected) && secondLibrary.Players.SequenceEqual(expected), "起動ごとに名前・性格・固定IDが変わらない");
+        Require(firstLibrary.Save() && secondLibrary.Save(), "別の起動から保存できる");
+        Require(new PlayerLibrary(file).Players.SequenceEqual(expected), "複数の起動から保存しても4人がずれたり増えたりしない");
+        var legacy = new[]
+        {
+            new PlayerProfile("old-sui", "シオン", PlayerTemperament.Careful),
+            new PlayerProfile("old-yuzu", "すい", PlayerTemperament.Balanced),
+            new PlayerProfile("old-rei", "ゆず", PlayerTemperament.Reckless),
+            new PlayerProfile("old-haru", "なぎ", PlayerTemperament.Meticulous)
+        };
+        var history = new PlayerRun("run", "game", "old-rei", "冒険中", 0, 14, 6, 159, .273, 10000, DateTimeOffset.UtcNow);
+        File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(new { Players = legacy, Games = Array.Empty<GameDefinition>(), Runs = new[] { history } }));
+        var restored = new PlayerLibrary(file);
+        Require(restored.Players.Select(p => (p.Name, p.Temperament)).SequenceEqual(expected.Select(p => (p.Name, p.Temperament))),
+            "古いランダム名の保存でも決めた名前と性格に揃う");
+        Require(restored.Players.Single(p => p.Name == "レイ").Id == history.PlayerId && restored.Runs.Single() == history,
+            "古いプレイヤーの性格と記録を別人に移さない");
+        Console.WriteLine("PASS: stable names, styles and IDs across starts/saves; legacy random names corrected without moving history.");
+    }
+    finally
+    {
+        foreach (string file in Directory.GetFiles(directory)) File.Delete(file);
+        Directory.Delete(directory);
+    }
+    return;
+}
+
 if (args.Contains("--town-smoke"))
 {
     void Set(Adventure game, string property, object value) => typeof(Adventure).GetProperty(property)!.SetValue(game, value);

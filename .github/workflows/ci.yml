@@ -25,3 +25,5 @@ jobs:
         run: dotnet run --project Tests/DotARPG.Checks.csproj -c Release -- --town-smoke
       - name: Check English localization
         run: dotnet run --project Tests/DotARPG.Checks.csproj -c Release --no-build -- --language-smoke
+      - name: Check stable player identities
+        run: dotnet run --project Tests/DotARPG.Checks.csproj -c Release --no-build -- --players-smoke

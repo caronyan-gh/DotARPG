@@ -88,9 +88,12 @@ internal static class UiChecks
                 }
             }
             finally { Marshal.FreeHGlobal(memory); }
-            if (window.Map.ActualWidth != World.Width || window.Map.ActualHeight != World.Height || window.Icon == null)
+            if (Math.Abs(window.Map.ActualWidth / window.Map.ActualHeight - World.Width / (double)World.Height) > .0001 || window.Icon == null)
                 throw new InvalidOperationException("地図全体またはアイコンの表示が正しくありません。");
-            return "PASS: all 8 resize edges preserve client aspect; complete 1024x768 map and application icon displayed.";
+            window.AdvanceForSnapshot(500); window.UpdateLayout();
+            if (window.LogPanel.Children.Count != 6 || window.LogScroll.ViewportHeight < 180)
+                throw new InvalidOperationException("ログ6件を表示するための高さが不足しています。");
+            return $"PASS: all 8 resize edges preserve client aspect; world map fits; journal viewport {window.LogScroll.ViewportHeight:0}px for six entries.";
         }
         finally { window.Close(); }
     }

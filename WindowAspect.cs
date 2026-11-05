@@ -7,7 +7,7 @@ namespace DotARPG;
 
 internal static class WindowAspect
 {
-    internal const double ContentWidth = 1328, ContentHeight = 768;
+    internal const double ContentWidth = 1640, ContentHeight = 960;
     private const double Ratio = ContentWidth / ContentHeight;
 
     internal static void Attach(Window window)
