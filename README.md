@@ -18,7 +18,13 @@ Download `DotARPG.exe` from Releases and run it on Windows x64. The .NET runtime
 - 途中保存、プレイデータ、同じ作品への別プレイヤーの挑戦、時々現れる続編。
 - 右上のボタンで日本語／Englishを切り替え。
 - プレイデータ画面で、4人のプレイヤーの肖像と冒険の記録を確認。
-- 和風マップのBGM「Stillness at the Mountain Gate」を収録。右上の♫で音量・ミュートを変更。曲末のフェードを含めてループします。
+- 和風・洋風・中華風マップのBGMを収録。右上の♫で音量・ミュートを変更。曲末のフェードを含めてループします。
+
+| 世界観 / Setting | BGM |
+|---|---|
+| 和風 / Japanese | Stillness at the Mountain Gate |
+| 洋風 / Western | Sunlight on Worn Stone |
+| 中華風 / Chinese | 远山凝露 |
 
 | 操作 / Key | 動作 / Action |
 |---|---|
