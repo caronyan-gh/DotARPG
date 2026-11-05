@@ -319,6 +319,11 @@ public static class GameText
 """;
 
     private const string Phrases = """
+マナポーション|Mana Potion
+帰還の巻物|Recall Scroll
+マナポーションを使い、MPを回復した。|Used a mana potion to restore MP.
+店でマナポーションを一つ補充した。|Bought a mana potion at the shop.
+店で帰還の巻物を一つ補充した。|Bought a recall scroll at the shop.
 プレイデータ|Player Data
 装 備|EQUIPMENT
 武器|Weapon
@@ -536,6 +541,9 @@ Lv.{0}に上がった。少しずつ、力がついてきた。|Reached Lv.{0}. 
 {0}を倒した。|Defeated {0}.
 {0}は、帰らぬ人となった。|{0} never returned.
 {0}で目を覚ました。{1}度の死を越えて、再び。|Awoke in {0}. Rising again after {1} deaths.
+帰還の巻物を使い、{0}へ戻った。|Used a recall scroll to return to {0}.
+{0}のタウンポータルが開通した。|Activated the town portal in {0}.
+{0}のタウンポータルから、{1}へ移動した。|Traveled from {0} to {1} through the town portals.
 {0}との戦いに倒れた。|Fell in battle against {0}.
 {0}を取り戻し、{1}を倒した。|Recovered {0} and defeated {1}.
 {0}に捕らわれた人々を救った。|Rescued those held captive by {0}.

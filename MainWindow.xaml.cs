@@ -364,7 +364,7 @@ public partial class MainWindow : Window
         var save = new JourneyCheckpoint(JourneyCheckpointStore.SimulationVersion, definition.Seed, definition.Style,
             definition.PreviousStory, player.Temperament, adventure.Tick, adventure.Title, flow.Phase,
             flow.OpeningElapsed, speedIndex, paused, adventure.RevivalTicks.ToArray(), player.Id, player.Name, definition.Id, runId,
-            adventure.CombatRulesUpgradeTick, adventure.TownRulesUpgradeTick, adventure.World.ExpandedProgression);
+            adventure.CombatRulesUpgradeTick, adventure.TownRulesUpgradeTick, adventure.World.ExpandedProgression, adventure.TravelRulesUpgradeTick);
         bool progress = checkpoints!.Save(save);
         if (!history || !progress) adventure.Notify(checkpoints.Notice ?? library.Notice ?? "保存できませんでした。");
         return history && progress;

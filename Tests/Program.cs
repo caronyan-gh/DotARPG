@@ -2,6 +2,7 @@ using DotARPG.Core;
 using System.Numerics;
 
 if (args.Contains("--sessions")) { SessionChecks.Run(); return; }
+if (args.Contains("--travel-smoke")) { TravelChecks.Run(); return; }
 
 if (args.Contains("--players-smoke"))
 {
@@ -72,11 +73,17 @@ if (args.Contains("--town-smoke"))
     Require(Adventure.DayAt(4350) == 2, "従来30日だった時点は2日になる");
     Console.WriteLine("PASS: low HP/empty MP, free camp, passing-town recovery, slower calendar.");
     var run = new Adventure(new World(31, WorldStyle.Japanese), temperament: PlayerTemperament.Reckless);
-    int previousVisits = 0, level7Day = 0;
+    int previousVisits = 0, level7Day = 0, recalls = 0, portals = 0;
+    TownTransit? previousTransit = null;
     for (int tick = 0; tick < 60000 && !run.Won; tick++)
     {
         if (run.Finished && (run.DeathCount >= 4 || !run.ReviveAtBase())) break;
         run.Step();
+        if (run.LastTransit is { } transit && transit != previousTransit)
+        {
+            if (transit.Portal) portals++; else recalls++;
+            previousTransit = transit;
+        }
         if (level7Day == 0 && run.Level >= 7) level7Day = run.Day;
         if (run.RestVisits > previousVisits)
         {
@@ -84,7 +91,7 @@ if (args.Contains("--town-smoke"))
             previousVisits = run.RestVisits;
         }
     }
-    Console.WriteLine($"Journey: won={run.Won}, Lv{run.Level}, stage={run.Stage}, tick={run.Tick}, midbosses={run.MidbossVictories}, rests={run.RestVisits}, gold={run.Gold}, deaths={run.DeathCount}, Lv7Day={level7Day}, objective={run.Objective}");
+    Console.WriteLine($"Journey: won={run.Won}, Lv{run.Level}, stage={run.Stage}, tick={run.Tick}, midbosses={run.MidbossVictories}, rests={run.RestVisits}, gold={run.Gold}, deaths={run.DeathCount}, Lv7Day={level7Day}, recalls={recalls}, portals={portals}, towns={run.VisitedTowns.Count}, objective={run.Objective}");
     Require(run.Won && run.MidbossVictories == run.World.Guardians.Count, "回復と段階的な育成を挟み、全中ボスとLv22のラスボスを攻略できる");
     return;
 }

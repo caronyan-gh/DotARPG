@@ -9,12 +9,12 @@ public sealed record JourneyCheckpoint(int SimulationVersion, int Seed, WorldSty
     EpisodePhase Phase, double OpeningElapsed, int SpeedIndex, bool Paused,
     int[]? RevivalTicks = null, string? PlayerId = null, string? PlayerName = null,
     string? GameId = null, string? RunId = null, int CombatRulesUpgradeTick = 0,
-    int TownRulesUpgradeTick = 0, bool ExpandedProgression = true);
+    int TownRulesUpgradeTick = 0, bool ExpandedProgression = true, int TravelRulesUpgradeTick = 0);
 
 public sealed class JourneyCheckpointStore
 {
     // Bump this when simulation changes would make an older replay produce a different journey.
-    public const int SimulationVersion = 4;
+    public const int SimulationVersion = 5;
     public string FilePath { get; }
     public string? Notice { get; private set; }
     private static readonly JsonSerializerOptions Options = new()
@@ -49,10 +49,11 @@ public sealed class JourneyCheckpointStore
     {
         var save = JsonSerializer.Deserialize<JourneyCheckpoint>(File.ReadAllText(path), Options)
             ?? throw new JsonException("保存データが空です。");
-        if (save.SimulationVersion is not (2 or 3 or SimulationVersion) || !Enum.IsDefined(save.Style)
+        if (save.SimulationVersion is not (2 or 3 or 4 or SimulationVersion) || !Enum.IsDefined(save.Style)
             || !Enum.IsDefined(save.Temperament) || !Enum.IsDefined(save.Phase)
             || save.Tick is < 0 or > 2_000_000 || save.CombatRulesUpgradeTick < 0 || save.CombatRulesUpgradeTick > save.Tick
             || save.TownRulesUpgradeTick < 0 || save.TownRulesUpgradeTick > save.Tick
+            || save.TravelRulesUpgradeTick < 0 || save.TravelRulesUpgradeTick > save.Tick
             || string.IsNullOrWhiteSpace(save.Title)
             || !double.IsFinite(save.OpeningElapsed) || save.OpeningElapsed is < 0 or > EpisodeFlow.OpeningDuration
             || save.SpeedIndex is < 0 or > 2 || save.PreviousStory is { } previous
@@ -97,8 +98,10 @@ public sealed class JourneyCheckpointStore
 
     public static Adventure Replay(JourneyCheckpoint save)
     {
-        if (save.SimulationVersion is not (2 or 3 or SimulationVersion)) throw new InvalidDataException("保存データの版が異なります。");
-        var game = new Adventure(new World(save.Seed, save.Style, save.SimulationVersion >= 4 && save.ExpandedProgression), save.PreviousStory, save.Temperament, save.PlayerId);
+        if (save.SimulationVersion is not (2 or 3 or 4 or SimulationVersion)) throw new InvalidDataException("保存データの版が異なります。");
+        var game = new Adventure(new World(save.Seed, save.Style, save.SimulationVersion >= 4 && save.ExpandedProgression),
+            save.PreviousStory, save.Temperament, save.PlayerId,
+            save.SimulationVersion < 5 ? save.Tick : save.TravelRulesUpgradeTick);
         game.CombatRulesUpgradeTick = save.SimulationVersion == 2 ? save.Tick : save.CombatRulesUpgradeTick;
         game.TownRulesUpgradeTick = save.SimulationVersion < 4 ? save.Tick : save.TownRulesUpgradeTick;
         int revivalIndex = 0;

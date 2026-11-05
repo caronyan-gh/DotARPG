@@ -2,6 +2,7 @@ namespace DotARPG.Core;
 
 public enum LogTone { Quiet, Normal, Discovery, Danger, Ending }
 public sealed record LogEntry(int Tick, string Text, LogTone Tone);
+public sealed record TownTransit(Point From, Point To, int Tick, bool Portal);
 public enum StoryKind { Restore, Rescue, Seal }
 
 public sealed class Adventure
@@ -48,6 +49,9 @@ public sealed class Adventure
     // Earlier saves replay their original combat rules up to this tick, then use the new balance.
     public int CombatRulesUpgradeTick { get; internal set; }
     public int TownRulesUpgradeTick { get; internal set; }
+    public int TravelRulesUpgradeTick { get; }
+    public IReadOnlyCollection<Site> VisitedTowns => visitedTowns;
+    public TownTransit? LastTransit { get; private set; }
     public IReadOnlyList<int> RevivalTicks => revivalTicks;
     public Site RespawnSite { get; private set; }
     public bool Training { get; private set; }
@@ -113,10 +117,14 @@ public sealed class Adventure
     private readonly List<GearItem> carriedEquipment = [];
     private bool bossPreparationNeeded;
     private int ineffectiveBossHits;
+    private readonly HashSet<Site> visitedTowns = [];
+    private bool travelSuppliesReady;
 
-    public Adventure(World world, SagaMemory? previous = null, PlayerTemperament? temperament = null, string? playerId = null)
+    public Adventure(World world, SagaMemory? previous = null, PlayerTemperament? temperament = null, string? playerId = null,
+        int travelRulesUpgradeTick = 0)
     {
         World = world;
+        TravelRulesUpgradeTick = travelRulesUpgradeTick;
         Equipment = new EquipmentLoadout(world.Theme.Style);
         Exploration = new Exploration(world);
         random = world.Random;
@@ -126,6 +134,7 @@ public sealed class Adventure
         policy = PlayerPolicy.For(Temperament);
         Hero = world.Sites[0].Position;
         RespawnSite = world.Sites[0];
+        visitedTowns.Add(RespawnSite);
         Exploration.Reveal(Hero);
         Theme t = world.Theme;
         string role = t.Heroes[random.Next(t.Heroes.Length)];
@@ -192,6 +201,7 @@ public sealed class Adventure
             _ => $"{Villain}を封じる術を求めて。"
         });
         nextFlavor = 26;
+        if (travelRulesUpgradeTick == 0) PrepareTravelSupplies();
         SetDestination();
     }
 
@@ -199,6 +209,7 @@ public sealed class Adventure
     {
         Tick++;
         if (Finished) return;
+        if (!travelSuppliesReady && Tick > TravelRulesUpgradeTick) PrepareTravelSupplies();
         if (Tick > CombatRulesUpgradeTick) finalBoss.GuardianProtection = World.Guardians.Count(g => g.Alive);
         if (itemCooldown > 0) itemCooldown--;
         World.MoveCreatures(Hero, opponent, Tick);
@@ -210,6 +221,7 @@ public sealed class Adventure
         }
         if (wait > 0) { wait--; return; }
         if (opponent != null) { Fight(); return; }
+        if (travelSuppliesReady && !World.InTown(Hero)) TryUseManaPotion();
         if (Tick > TownRulesUpgradeTick && !resting && NeedsRest())
         {
             ReturnToTown();
@@ -258,7 +270,7 @@ public sealed class Adventure
         Exploration.Reveal(Hero);
         if (World.Sites.FirstOrDefault(s => s.IsTown && s.Position.Distance(Hero) < 2) is { } camp)
         {
-            RespawnSite = camp;
+            VisitTown(camp);
             if (Tick > TownRulesUpgradeTick && previousHero.Distance(camp.Position) >= 2
                 && (Health < MaxHealth || Mana < MaxMana))
             {
@@ -406,10 +418,15 @@ public sealed class Adventure
 
     private void ReturnToTown()
     {
-        Site inn = World.Sites.Where(s => s.IsTown).MinBy(s => Hero.Distance(s.Position))!;
+        Site inn = (travelSuppliesReady ? visitedTowns : World.Sites.Where(s => s.IsTown)).MinBy(s => Hero.Distance(s.Position))!;
         Add($"消耗が激しい。{inn.Name}へ戻る。", LogTone.Danger);
         Objective = $"{inn.Name}で休息と補給";
         resting = true;
+        if (travelSuppliesReady && Hero.Distance(inn.Position) > 60 && UseItem("帰還の巻物"))
+        {
+            Add($"帰還の巻物を使い、{inn.Name}へ戻った。", LogTone.Discovery);
+            TransitTo(inn, false);
+        }
         Route(inn.Position);
     }
 
@@ -420,6 +437,7 @@ public sealed class Adventure
 
     private void RestInTown()
     {
+        if (World.Sites.FirstOrDefault(s => s.IsTown && Hero.Distance(s.Position) < 2) is { } town) VisitTown(town);
         RestVisits++;
         int fee = 8 + Level * 2;
         bool canPay = Gold >= fee;
@@ -444,12 +462,38 @@ public sealed class Adventure
         }
         if (Gold >= 10 && inventory["傷薬"] < 2) { Gold -= 10; inventory["傷薬"]++; Add("店で傷薬を一つ補充した。", LogTone.Quiet); }
         BuyEquipment(World.MarketTier(Hero));
+        if (travelSuppliesReady)
+        {
+            while (Gold >= 8 && inventory.GetValueOrDefault("マナポーション") < 2)
+            {
+                Gold -= 8;
+                inventory["マナポーション"] = inventory.GetValueOrDefault("マナポーション") + 1;
+                Add("店でマナポーションを一つ補充した。", LogTone.Quiet);
+            }
+            if (Gold >= 12 && inventory.GetValueOrDefault("帰還の巻物") < 1)
+            {
+                Gold -= 12;
+                inventory["帰還の巻物"] = 1;
+                Add("店で帰還の巻物を一つ補充した。", LogTone.Quiet);
+            }
+        }
         wait = !canPay && Tick > TownRulesUpgradeTick ? 75 : 45;
     }
 
     private void Route(Point destination)
     {
         path.Clear();
+        if (travelSuppliesReady && !resting && opponent == null
+            && visitedTowns.Any(t => Hero.Distance(t.Position) < 2))
+        {
+            Site exit = visitedTowns.MinBy(t => t.Position.Distance(destination))!;
+            if (exit.Position.Distance(destination) + 60 < Hero.Distance(destination))
+            {
+                Site entrance = visitedTowns.First(t => Hero.Distance(t.Position) < 2);
+                Add($"{entrance.Name}のタウンポータルから、{exit.Name}へ移動した。", LogTone.Discovery);
+                TransitTo(exit, true);
+            }
+        }
         foreach (Point p in World.FindPath(Hero, destination, Level + policy.RiskTolerance)) path.Enqueue(p);
         if (Hero != destination && path.Count == 0) throw new InvalidOperationException("目的地への道がありません。");
     }
@@ -558,7 +602,8 @@ public sealed class Adventure
             itemCooldown = 60;
             Add("傷薬を使い、体勢を立て直した。", LogTone.Discovery);
         }
-        if (itemCooldown == 0 && Mana < 7 && UseItem("霊薬")) { Mana = Math.Min(MaxMana, Mana + 18); itemCooldown = 60; Add("霊薬で魔力を補った。", LogTone.Quiet); }
+        if (travelSuppliesReady) TryUseManaPotion();
+        else if (itemCooldown == 0 && Mana < 7 && UseItem("霊薬")) { Mana = Math.Min(MaxMana, Mana + 18); itemCooldown = 60; Add("霊薬で魔力を補った。", LogTone.Quiet); }
         int retreatGap = Tick > CombatRulesUpgradeTick
             ? Temperament is PlayerTemperament.Careful or PlayerTemperament.Meticulous ? 3 : 4
             : policy.RiskTolerance + 2;
@@ -703,6 +748,40 @@ public sealed class Adventure
         inventory[item]--;
         ItemsUsed++;
         return true;
+    }
+
+    private void PrepareTravelSupplies()
+    {
+        travelSuppliesReady = true;
+        inventory["マナポーション"] = inventory.GetValueOrDefault("霊薬") + 1;
+        inventory.Remove("霊薬");
+        inventory["帰還の巻物"] = 1;
+    }
+
+    private void TryUseManaPotion()
+    {
+        if (itemCooldown != 0 || Mana >= Math.Max(7, MaxMana * .25) || !UseItem("マナポーション")) return;
+        Mana = Math.Min(MaxMana, Mana + Math.Max(18, MaxMana / 2));
+        itemCooldown = 60;
+        Add("マナポーションを使い、MPを回復した。", LogTone.Discovery);
+    }
+
+    private void VisitTown(Site town)
+    {
+        RespawnSite = town;
+        if (visitedTowns.Add(town) && travelSuppliesReady)
+            Add($"{town.Name}のタウンポータルが開通した。", LogTone.Discovery);
+    }
+
+    private void TransitTo(Site town, bool portal)
+    {
+        LastTransit = new(Hero, town.Position, Tick, portal);
+        Hero = town.Position;
+        Trail.Clear();
+        Exploration.Reveal(Hero);
+        VisitTown(town);
+        currentBand = World.RegionBand(Hero);
+        lastEncounter = Tick;
     }
 
     private void TravelEvent()

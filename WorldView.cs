@@ -17,6 +17,8 @@ public sealed class WorldView : FrameworkElement
     private readonly byte[] fogPixels = new byte[World.Width * World.Height * 4];
     private readonly Typeface typeface = new("Yu Gothic UI");
     private double phase, lastTime = double.NaN;
+    private TownTransit? observedTransit;
+    private double transitAge = 2;
     private double cameraZoom = 1;
     private Battle? encounterBattle;
     private Rect? encounterInfoPanel;
@@ -48,6 +50,8 @@ public sealed class WorldView : FrameworkElement
         cameraZoom = 1;
         cameraCenter = new(World.Width / 2f, World.Height / 2f);
         lastTime = double.NaN;
+        observedTransit = value.LastTransit;
+        transitAge = 2;
         InvalidateVisual();
     }
 
@@ -57,6 +61,12 @@ public sealed class WorldView : FrameworkElement
         lastTime = time;
         UpdateFog();
         if (freeze) return;
+        if (observedTransit != adventure?.LastTransit)
+        {
+            observedTransit = adventure?.LastTransit;
+            transitAge = observedTransit != null && adventure!.Tick - observedTransit.Tick <= 20 ? 0 : 2;
+        }
+        else transitAge += elapsed;
         phase = time;
         Vector2 target = new(World.Width / 2f, World.Height / 2f);
         double zoom = 1;
@@ -112,8 +122,17 @@ public sealed class WorldView : FrameworkElement
             {
                 dc.DrawRectangle(brush, null, new Rect(p.X - 2, p.Y + 1, 1, 1));
                 dc.DrawRectangle(brush, null, new Rect(p.X + 1, p.Y - 2, 1, 1));
+                if (adventure.VisitedTowns.Contains(site))
+                    dc.DrawEllipse(null, new Pen(Brush(0x78D9D7, .8), .65 / scale), new(p.X + .5, p.Y + .5), 3, 3);
             }
             else dc.DrawRectangle(Brush(0xCDD7B9, .3), null, new Rect(p.X - 1, p.Y - 1, 3, 3));
+        }
+        if (observedTransit is { } transit && transitAge < 1.1)
+        {
+            var pen = new Pen(Brush(0xA0EFEC, 1 - transitAge / 1.1), 1.5 / scale);
+            double radius = (5 + transitAge * 22) / scale;
+            dc.DrawEllipse(null, pen, new(transit.From.X, transit.From.Y), radius, radius);
+            dc.DrawEllipse(null, pen, new(transit.To.X, transit.To.Y), radius, radius);
         }
         double dot = Math.Max(1, 1 / scale);
         foreach (var enemy in world.Creatures)
