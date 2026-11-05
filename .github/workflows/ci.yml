@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build (Release)
+        run: dotnet build DotARPG.csproj -c Release
+      - name: Build (Debug)
+        run: dotnet build DotARPG.csproj -c Debug
+      - name: Check recovery and adventure progression
+        run: dotnet run --project Tests/DotARPG.Checks.csproj -c Release -- --town-smoke
+      - name: Check English localization
+        run: dotnet run --project Tests/DotARPG.Checks.csproj -c Release --no-build -- --language-smoke

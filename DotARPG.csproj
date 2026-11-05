@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>DotARPG</AssemblyName>
+    <Version>0.1.0</Version>
+    <ApplicationIcon>Assets\DotARPG.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Tests/**/*.cs" />
+    <EmbeddedResource Remove="Tests/**" />
+    <None Remove="Tests/**" />
+    <Resource Include="Assets\DotARPG.ico" />
+    <Resource Include="Assets\Portraits\*.png" />
+  </ItemGroup>
+</Project>
